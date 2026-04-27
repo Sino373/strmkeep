@@ -2,133 +2,109 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Game</title>
+    <title>Simple HTML Chess</title>
+    <!-- Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com">
+    <script src="https://jquery.com"></script>
+    <script src="https://unpkg.com"></script>
+    <script src="https://cloudflare.com"></script>
     <style>
-        body { font-family: Arial, sans-serif; }
-        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 400px; height: 400px; }
-        .square { width: 50px; height: 50px; }
-        .white { background-color: #eee; }
-        .black { background-color: #444; }
-        .piece { width: 100%; height: 100%; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #2c3e50; color: white; }
+        #myBoard { width: 400px; margin-top: 20px; }
+        .controls { margin-top: 20px; text-align: center; }
+        button { padding: 10px 20px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; }
+        #status { margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Chess Game</h1>
-    <div id="board"></div>
+
+    <h2>Chess: Friend or AI</h2>
+    <div id="status">White to move</div>
+    <div id="myBoard"></div>
+
+    <div class="controls">
+        <label><input type="checkbox" id="aiToggle"> Play vs AI (Random)</label><br><br>
+        <button id="resetBtn">Reset Game</button>
+    </div>
+
     <script>
-        // Chess game logic and state
-        const board = document.getElementById('board');
-        const pieces = {
-            'bK': '♚', 'bQ': '♛', 'bR': '♖', 'bB': '♗', 'bN': '♞', 'bP': '♟',
-            'wK': '♔', 'wQ': '♕', 'wR': '♖', 'wB': '♗', 'wN': '♘', 'wP': '♙',
-        };
-        let currentTurn = 'w'; // white starts
-        let boardState = [];
+        var board = null;
+        var game = new Chess();
+        var $status = $('#status');
 
-        // Initialize the board
-        function initBoard() {
-            for (let i = 0; i < 8; i++) {
-                boardState[i] = [];
-                for (let j = 0; j < 8; j++) {
-                    const square = document.createElement('div');
-                    square.classList.add('square', (i + j) % 2 === 0 ? 'white' : 'black');
-                    square.dataset.position = `${i}-${j}`;
-                    square.addEventListener('click', handleSquareClick);
-                    board.appendChild(square);
-                    boardState[i][j] = null;
-                }
-            }
-            placePieces();
-        }
-
-        // Place pieces on the board
-        function placePieces() {
-            const initialSetup = [
-                ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
-                ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
-                [null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null],
-                ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
-                ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
-            ];
-            for (let i = 0; i < 8; i++) {
-                for (let j = 0; j < 8; j++) {
-                    const piece = initialSetup[i][j];
-                    if (piece) {
-                        placePiece(piece, i, j);
-                    }
-                }
+        function onDragStart (source, piece, position, orientation) {
+            if (game.game_over()) return false;
+            // Only pick up pieces for the player whose turn it is
+            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                return false;
             }
         }
 
-        // Place a piece on the board
-        function placePiece(piece, x, y) {
-            const square = board.querySelector(`[data-position='${x}-${y}']`);
-            square.textContent = pieces[piece];
-            boardState[x][y] = piece;
+        function makeRandomMove () {
+            var possibleMoves = game.moves();
+            if (possibleMoves.length === 0) return;
+
+            var randomIdx = Math.floor(Math.random() * possibleMoves.length);
+            game.move(possibleMoves[randomIdx]);
+            board.position(game.fen());
+            updateStatus();
         }
 
-        let selectedSquare = null;
+        function onDrop (source, target) {
+            var move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q' // Always promote to queen for simplicity
+            });
 
-        // Handle square click event
-        function handleSquareClick(event) {
-            const position = event.target.dataset.position.split('-');
-            const x = parseInt(position[0]);
-            const y = parseInt(position[1]);
+            if (move === null) return 'snapback';
 
-            if (selectedSquare) {
-                // Try to move the piece
-                movePiece(selectedSquare, x, y);
-                selectedSquare = null;
+            updateStatus();
+
+            // If AI is enabled and it's Black's turn
+            if ($('#aiToggle').is(':checked') && !game.game_over()) {
+                window.setTimeout(makeRandomMove, 250);
+            }
+        }
+
+        function onSnapEnd () {
+            board.position(game.fen());
+        }
+
+        function updateStatus () {
+            var status = '';
+            var moveColor = (game.turn() === 'b') ? 'Black' : 'White';
+
+            if (game.in_checkmate()) {
+                status = 'Game over, ' + moveColor + ' is in checkmate.';
+            } else if (game.in_draw()) {
+                status = 'Game over, drawn position';
             } else {
-                // Select the piece
-                selectPiece(x, y);
+                status = moveColor + ' to move';
+                if (game.in_check()) {
+                    status += ', ' + moveColor + ' is in check';
+                }
             }
+            $status.html(status);
         }
 
-        // Select a piece
-        function selectPiece(x, y) {
-            const piece = boardState[x][y];
-            if (piece && piece[0] === currentTurn[0]) {
-                selectedSquare = [x, y];
-                const square = board.querySelector(`[data-position='${x}-${y}']`);
-                square.style.border = '2px solid red'; // Highlight selected piece
-            }
-        }
+        var config = {
+            draggable: true,
+            position: 'start',
+            onDragStart: onDragStart,
+            onDrop: onDrop,
+            onSnapEnd: onSnapEnd
+        };
+        board = ChessBoard('myBoard', config);
 
-        // Move a piece
-        function movePiece(selectedSquare, x, y) {
-            const [fromX, fromY] = selectedSquare;
-            // Implement movement logic here (simplified)
-            if (isValidMove(fromX, fromY, x, y)) {
-                const piece = boardState[fromX][fromY];
-                boardState[x][y] = piece;
-                boardState[fromX][fromY] = null;
-                placePiece(piece, x, y);
-                const squareFrom = board.querySelector(`[data-position='${fromX}-${fromY}']`);
-                squareFrom.textContent = '';
-                currentTurn = currentTurn === 'w' ? 'b' : 'w'; // Toggle turn
-            }
-            // Remove highlight
-            resetSelectedSquare(selectedSquare);
-        }
+        $('#resetBtn').on('click', function() {
+            game.reset();
+            board.start();
+            updateStatus();
+        });
 
-        // Check if a move is valid
-        function isValidMove(fromX, fromY, toX, toY) {
-            // Implement actual chess rules here
-            return true;
-        }
-
-        // Reset selected square
-        function resetSelectedSquare([x, y]) {
-            const square = board.querySelector(`[data-position='${x}-${y}']`);
-            square.style.border = ''; // Remove highlight
-        }
-
-        initBoard();
+        updateStatus();
     </script>
 </body>
 </html>
