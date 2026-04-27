@@ -1,707 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Storm Keep - Tower Defense</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0a0f;color:#e8d5a3;font-family:'Crimson Text',serif;overflow:hidden;width:100%;height:100vh;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-#app{width:100%;height:100vh;position:relative;overflow:hidden}
-.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center}
-.screen.active{display:flex}
-#title-screen{background:radial-gradient(ellipse at 50% 30%,#1a0e2e 0%,#0a0a0f 70%);padding:16px;overflow-y:auto}
-.game-title{font-family:'Cinzel',serif;font-size:clamp(28px,7vw,56px);font-weight:700;color:#f0c060;text-shadow:0 0 40px rgba(240,180,60,0.5),0 4px 8px rgba(0,0,0,0.8);letter-spacing:4px;margin-bottom:6px;text-align:center}
-.game-subtitle{font-family:'Cinzel',serif;font-size:clamp(10px,2.5vw,16px);color:#a08040;letter-spacing:6px;margin-bottom:24px}
-.mode-cards{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;justify-content:center}
-.mode-card{width:clamp(130px,28vw,190px);padding:clamp(14px,3vw,30px) clamp(10px,2.5vw,20px);border:1px solid;border-radius:14px;cursor:pointer;transition:all 0.3s;text-align:center}
-.mode-card:hover,.mode-card:active{transform:translateY(-4px) scale(1.04)}
-.mode-card.easy{border-color:#4a9e4a;background:rgba(40,80,40,0.35);color:#7ddb7d}
-.mode-card.medium{border-color:#c8962a;background:rgba(80,60,20,0.35);color:#f0b84a}
-.mode-card.hard{border-color:#9e3030;background:rgba(80,20,20,0.35);color:#e86060}
-.mode-icon{font-size:clamp(24px,5vw,40px);margin-bottom:10px}
-.mode-name{font-family:'Cinzel',serif;font-size:clamp(14px,3.5vw,22px);font-weight:600;margin-bottom:6px}
-.mode-desc{font-size:clamp(10px,2.2vw,13px);opacity:0.7;line-height:1.5}
-.title-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-#title-music-btn,#credits-btn{padding:10px 22px;border:1px solid rgba(240,180,60,0.4);border-radius:10px;background:rgba(240,180,60,0.08);color:#f0c060;font-family:'Cinzel',serif;font-size:clamp(11px,2.5vw,14px);cursor:pointer;transition:all 0.2s;letter-spacing:1px}
-#title-music-btn:hover,#title-music-btn.on{background:rgba(240,180,60,0.2);border-color:#f0c060;box-shadow:0 0 18px rgba(240,180,60,0.25)}
-#credits-btn{border-color:rgba(140,180,240,0.4);background:rgba(140,180,240,0.08);color:#a0c0f0}
-#credits-btn:hover{background:rgba(140,180,240,0.2);border-color:#a0c0f0;box-shadow:0 0 18px rgba(140,180,240,0.25)}
-#map-screen{background:#0a0a0f;overflow-y:auto;padding:16px}
-.map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:720px;margin:12px auto;width:100%}
-@media(max-width:480px){.map-grid{grid-template-columns:repeat(1,1fr);max-width:300px}}
-.map-card{border:1px solid rgba(255,255,255,0.12);border-radius:12px;cursor:pointer;transition:all 0.3s;overflow:hidden}
-.map-card:hover,.map-card:active{transform:scale(1.04);box-shadow:0 0 24px rgba(255,255,255,0.12)}
-.map-preview{height:80px;display:flex;align-items:center;justify-content:center;font-size:36px}
-.map-info{padding:10px}
-.map-name{font-family:'Cinzel',serif;font-size:13px;font-weight:600;margin-bottom:3px}
-.map-detail{font-size:11px;opacity:0.6}
-#game-screen{background:#0a0a0f;flex-direction:column;align-items:stretch;justify-content:flex-start}
-#game-area{display:flex;flex-direction:row;flex:1;overflow:hidden;position:relative}
-#game-canvas{display:block;touch-action:none}
-#sidebar{width:clamp(140px,22vw,220px);background:rgba(8,6,18,0.97);border-left:1px solid rgba(240,180,60,0.2);display:flex;flex-direction:column;padding:8px;overflow-y:auto;flex-shrink:0}
-@media(max-width:600px){
-  #game-area{flex-direction:column}
-  #sidebar{width:100%;max-height:160px;border-left:none;border-top:1px solid rgba(240,180,60,0.2);flex-direction:row;flex-wrap:wrap;gap:4px;padding:6px;overflow-x:auto;overflow-y:hidden}
-  .panel-title{display:none}
-  #tower-list{display:flex;flex-direction:row;gap:4px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .tower-btn{min-width:60px;flex-direction:column;align-items:center;padding:5px 4px;gap:2px;margin-bottom:0;flex-shrink:0}
-  .tower-info{display:none}
-  .tower-emoji{font-size:20px;width:auto}
-  .tower-cost-mobile{font-size:9px;color:#a08040;text-align:center;font-family:'Cinzel',serif;display:block}
-  #wave-preview{display:none}
-  #selected-info{display:none}
-  #sidebar-wave-section{display:none}
-  #upgrade-panel{display:none!important}
-}
-#hud{top:0;left:0;right:0;height:48px;background:rgba(5,5,15,0.97);border-bottom:1px solid rgba(240,180,60,0.25);display:flex;align-items:center;padding:0 8px;gap:6px;z-index:10;flex-shrink:0}
-.hud-item{display:flex;align-items:center;gap:3px;font-family:'Cinzel',serif;font-size:clamp(9px,2.2vw,12px);white-space:nowrap}
-.hud-val{color:#f0c060;font-weight:600}
-#wave-btn{margin-left:auto;padding:6px 12px;background:linear-gradient(135deg,#8b3a3a,#c04040);border:1px solid #e06060;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:clamp(10px,2.2vw,12px);cursor:pointer;transition:all 0.2s;white-space:nowrap;flex-shrink:0}
-#wave-btn:hover,#wave-btn:active{background:linear-gradient(135deg,#c04040,#e05050)}
-#wave-btn:disabled{opacity:0.4;cursor:not-allowed}
-#menu-btn{padding:5px 8px;border:1px solid rgba(180,100,100,0.4);border-radius:7px;background:rgba(100,20,20,0.2);color:#c08080;font-family:'Cinzel',serif;font-size:clamp(9px,2vw,11px);cursor:pointer;transition:all 0.2s;white-space:nowrap;flex-shrink:0}
-#menu-btn:hover{border-color:#e06060;color:#f0a0a0;background:rgba(140,30,30,0.3)}
-#music-btn{padding:5px 10px;border:1px solid rgba(240,180,60,0.3);border-radius:7px;background:rgba(240,180,60,0.06);color:#c0a040;font-family:'Cinzel',serif;font-size:clamp(9px,2vw,11px);cursor:pointer;transition:all 0.2s;white-space:nowrap;flex-shrink:0}
-#music-btn.on{border-color:#f0c060;color:#f0c060;background:rgba(240,180,60,0.15)}
-.speed-btns{display:flex;gap:3px;flex-shrink:0}
-.speed-btn{padding:5px 7px;border:1px solid rgba(120,180,120,0.35);border-radius:7px;background:rgba(60,120,60,0.08);color:#80c080;font-family:'Cinzel',serif;font-size:clamp(9px,2vw,11px);cursor:pointer;transition:all 0.2s;white-space:nowrap}
-.speed-btn:hover{border-color:rgba(120,200,120,0.7);background:rgba(60,140,60,0.2)}
-.speed-btn.active{border-color:#80e080;background:rgba(60,160,60,0.28);color:#b0ffb0;box-shadow:0 0 8px rgba(100,220,100,0.3)}
-#weather-bar{left:0;right:0;height:34px;background:rgba(12,8,25,0.97);border-bottom:1px solid rgba(240,180,60,0.15);display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0}
-.weather-icon{font-size:17px}
-.weather-name{font-family:'Cinzel',serif;font-size:clamp(10px,2.2vw,13px);color:#d0b060}
-.weather-effect{font-size:clamp(9px,1.8vw,12px);color:#a09060}
-@media(max-width:480px){.weather-effect{display:none}}
-.panel-title{font-family:'Cinzel',serif;font-size:10px;color:#a08040;letter-spacing:2px;margin:6px 0 4px;border-bottom:1px solid rgba(240,180,60,0.2);padding-bottom:3px}
-.tower-btn{display:flex;align-items:center;gap:6px;padding:5px 6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;cursor:pointer;transition:all 0.2s;margin-bottom:3px;background:rgba(255,255,255,0.03)}
-.tower-btn:hover,.tower-btn:active{border-color:rgba(240,180,60,0.5);background:rgba(240,180,60,0.08)}
-.tower-btn.selected{border-color:#f0c060;background:rgba(240,180,60,0.14)}
-.tower-btn.cant-afford{opacity:0.38;cursor:not-allowed}
-.tower-emoji{font-size:15px;width:20px;text-align:center}
-.tower-info{flex:1;min-width:0}
-.tower-name{font-family:'Cinzel',serif;font-size:9px;font-weight:600}
-.tower-cost{font-size:9px;color:#a08040}
-.tower-cost-mobile{font-size:9px;color:#a08040;text-align:center;font-family:'Cinzel',serif;display:none}
-/* Upgrade panel */
-#upgrade-panel{background:rgba(30,20,60,0.8);border:1px solid rgba(180,140,240,0.45);border-radius:10px;padding:8px;margin-top:6px;font-size:10px;line-height:1.75;display:none}
-#upgrade-panel .up-title{font-family:'Cinzel',serif;font-size:11px;color:#d0b0ff;margin-bottom:5px;font-weight:600}
-#upgrade-panel .up-stat{color:#c0b0e0}
-#upgrade-panel .up-stat b{color:#f0e0ff}
-.upg-btn{display:block;width:100%;margin-top:5px;padding:6px 6px;border:1px solid rgba(180,140,240,0.55);border-radius:7px;background:rgba(100,60,180,0.25);color:#c0a0ff;font-family:'Cinzel',serif;font-size:9px;cursor:pointer;transition:all 0.2s;text-align:center}
-.upg-btn:hover{background:rgba(130,90,210,0.45);border-color:#a080ff}
-.upg-btn:disabled{opacity:0.35;cursor:not-allowed}
-.sell-btn{display:block;width:100%;margin-top:4px;padding:5px 6px;border:1px solid rgba(240,100,100,0.45);border-radius:7px;background:rgba(120,30,30,0.25);color:#f09090;font-family:'Cinzel',serif;font-size:9px;cursor:pointer;transition:all 0.2s;text-align:center}
-.sell-btn:hover{background:rgba(160,40,40,0.45);border-color:#f07070}
-#advisor-toast{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:rgba(10,8,20,0.97);border:1px solid #f0c060;border-radius:10px;padding:8px 14px;font-family:'Cinzel',serif;font-size:11px;color:#f0e090;z-index:30;pointer-events:none;box-shadow:0 4px 24px rgba(240,180,60,0.25);white-space:nowrap;transition:opacity 0.6s;display:none}
-#advisor-toast .at-label{font-size:9px;color:#f0c060;letter-spacing:2px;display:block;margin-bottom:2px}
-#weather-overlay{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
-.dmg-float{position:absolute;font-family:'Cinzel',serif;font-size:11px;font-weight:600;pointer-events:none;z-index:20;animation:floatUp 1s forwards}
-@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-36px)}}
-/* Modals */
-.overlay-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
-.overlay-modal.show{display:flex}
-.modal-box{background:#100d20;border:2px solid #f0c060;border-radius:18px;padding:clamp(20px,5vw,40px);text-align:center;max-width:400px;width:100%;box-shadow:0 0 60px rgba(240,180,60,0.2)}
-.modal-box.danger{border-color:#e06060;box-shadow:0 0 60px rgba(220,80,80,0.2)}
-.modal-title{font-family:'Cinzel',serif;font-size:clamp(20px,5vw,32px);color:#f0c060;margin-bottom:10px}
-.modal-title.red{color:#f07070}
-.modal-desc{font-size:clamp(12px,3vw,15px);color:#a09060;line-height:1.8;margin-bottom:20px;white-space:pre-line}
-.modal-btn{padding:10px 24px;background:linear-gradient(135deg,#8b3a3a,#c04040);border:1px solid #e06060;border-radius:10px;color:#fff;font-family:'Cinzel',serif;font-size:clamp(12px,3vw,15px);cursor:pointer;margin:5px;transition:all 0.2s}
-.modal-btn:hover,.modal-btn:active{transform:scale(1.05)}
-.modal-btn.green{background:linear-gradient(135deg,#2a5a2a,#3a8a3a);border-color:#5aaa5a}
-.modal-btn.grey{background:linear-gradient(135deg,#2a2a3a,#3a3a5a);border-color:#5a5a8a}
-#sidebar::-webkit-scrollbar{width:3px}
-#sidebar::-webkit-scrollbar-thumb{background:rgba(240,180,60,0.3);border-radius:2px}
-.back-btn{position:absolute;top:12px;left:12px;padding:7px 14px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.05);color:#a09060;font-family:'Cinzel',serif;font-size:12px;cursor:pointer;transition:all 0.2s;z-index:10}
-.back-btn:hover{border-color:rgba(255,255,255,0.5);color:#e8d5a3}
-.screen-title{font-family:'Cinzel',serif;font-size:clamp(20px,5vw,30px);color:#f0c060;margin-bottom:4px;text-align:center}
-.screen-sub{font-size:clamp(11px,2.5vw,14px);color:#a08040;letter-spacing:3px;margin-bottom:20px;text-align:center}
-#now-playing{position:fixed;bottom:6px;left:8px;font-family:'Cinzel',serif;font-size:9px;color:rgba(240,180,60,0.4);letter-spacing:1px;pointer-events:none;z-index:20}
-/* Credits */
-#credits-modal{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;z-index:300;padding:16px}
-#credits-modal.show{display:flex}
-.credits-box{background:linear-gradient(135deg,#0d0a20,#180d2e);border:2px solid #a0c0f0;border-radius:20px;padding:36px 40px;text-align:center;max-width:380px;width:100%;box-shadow:0 0 60px rgba(140,180,240,0.25)}
-.credits-title{font-family:'Cinzel',serif;font-size:28px;color:#a0c0f0;margin-bottom:6px;letter-spacing:3px}
-.credits-sub{font-size:12px;color:#6080a0;letter-spacing:4px;margin-bottom:28px}
-.credits-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(140,180,240,0.15)}
-.credits-row:last-of-type{border-bottom:none}
-.credits-role{font-family:'Cinzel',serif;font-size:12px;color:#6090b0;letter-spacing:2px}
-.credits-name{font-family:'Cinzel',serif;font-size:15px;color:#d0e8ff;font-weight:600}
-.credits-close{margin-top:24px;padding:10px 28px;border:1px solid rgba(140,180,240,0.5);border-radius:10px;background:rgba(140,180,240,0.1);color:#a0c0f0;font-family:'Cinzel',serif;font-size:13px;cursor:pointer;transition:all 0.2s}
-.credits-close:hover{background:rgba(140,180,240,0.2);border-color:#a0c0f0}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+        }
+        .square {
+            width: 50px;
+            height: 50px;
+        }
+        .white {
+            background-color: white;
+        }
+        .black {
+            background-color: gray;
+        }
+        .piece {
+            font-size: 40px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-
-<!-- TITLE SCREEN -->
-<div id="title-screen" class="screen active">
-  <div class="game-title">⚔ STORM KEEP ⚔</div>
-  <div class="game-subtitle">TOWER DEFENSE</div>
-  <div class="mode-cards">
-    <div class="mode-card easy" onclick="selectMode('easy')"><div class="mode-icon">🌿</div><div class="mode-name">Easy</div><div class="mode-desc">Gentle foes, kind weather, abundant gold.</div></div>
-    <div class="mode-card medium" onclick="selectMode('medium')"><div class="mode-icon">🔥</div><div class="mode-name">Medium</div><div class="mode-desc">Hardened enemies, volatile storms.</div></div>
-    <div class="mode-card hard" onclick="selectMode('hard')"><div class="mode-icon">💀</div><div class="mode-name">Hard</div><div class="mode-desc">Elite hordes, deadly weather, scarce gold.</div></div>
-  </div>
-  <div class="title-btns">
-    <button id="title-music-btn" onclick="toggleTitleMusic()">🎵 Play Music — King of Kings</button>
-    <button id="credits-btn" onclick="showCredits()">📜 Credits</button>
-  </div>
-</div>
-
-<!-- CREDITS -->
-<div id="credits-modal">
-  <div class="credits-box">
-    <div class="credits-title">⚔ CREDITS ⚔</div>
-    <div class="credits-sub">STORM KEEP</div>
-    <div class="credits-row"><span class="credits-role">EDITOR</span><span class="credits-name">PajiKhooked</span></div>
-    <div class="credits-row"><span class="credits-role">PUBLISHER</span><span class="credits-name">Sino373</span></div>
-    <div class="credits-row"><span class="credits-role">CODER</span><span class="credits-name">Claude AI</span></div>
-    <button class="credits-close" onclick="hideCredits()">✦ Close ✦</button>
-  </div>
-</div>
-
-<!-- MAP SELECT -->
-<div id="map-screen" class="screen">
-  <button class="back-btn" onclick="showScreen('title-screen')">← Back</button>
-  <div class="screen-title">Choose Your Battlefield</div>
-  <div class="screen-sub" id="map-sub">EASY MODE</div>
-  <div class="map-grid" id="map-grid"></div>
-</div>
-
-<!-- GAME SCREEN -->
-<div id="game-screen" class="screen" style="justify-content:flex-start">
-  <div id="hud">
-    <div class="hud-item">❤️ <span class="hud-val" id="hud-lives">20</span></div>
-    <div class="hud-item">💰 <span class="hud-val" id="hud-gold">150</span></div>
-    <div class="hud-item">🌊 <span class="hud-val" id="hud-wave">0</span></div>
-    <div class="hud-item">⚔️ <span class="hud-val" id="hud-score">0</span></div>
-    <button id="music-btn" onclick="toggleGameMusic()">🎵 OFF</button>
-    <div class="speed-btns">
-      <button class="speed-btn active" id="spd1" onclick="setSpeed(1)">1×</button>
-      <button class="speed-btn" id="spd2" onclick="setSpeed(2)">2×</button>
-      <button class="speed-btn" id="spd4" onclick="setSpeed(4)">4×</button>
+    <div id="board">
+        <!-- Squares will be filled dynamically -->
     </div>
-    <button id="menu-btn" onclick="confirmMenu()">☰ Menu</button>
-    <button id="wave-btn" onclick="startWave()">Send Wave ▶</button>
-  </div>
-  <div id="weather-bar">
-    <span class="weather-icon" id="w-icon">☀️</span>
-    <span class="weather-name" id="w-name">Clear Skies</span>
-    <span class="weather-effect" id="w-effect">— No special effects</span>
-  </div>
-  <div id="game-area">
-    <div style="position:relative;flex:1;display:flex;align-items:flex-start;justify-content:center;overflow:hidden">
-      <canvas id="game-canvas"></canvas>
-      <div id="weather-overlay"></div>
-      <div id="advisor-toast"><span class="at-label">⚔ BEST FIRST MOVE</span><span id="advisor-text"></span></div>
-    </div>
-    <div id="sidebar">
-      <div class="panel-title">TOWERS</div>
-      <div id="tower-list"></div>
-      <div class="panel-title" id="sidebar-wave-section" style="margin-top:6px">WAVE INFO</div>
-      <div id="wave-preview" style="font-size:10px;color:#a08040;line-height:1.8">Prepare!</div>
-      <div class="panel-title" style="margin-top:6px">INFO</div>
-      <div id="selected-info" style="font-size:10px;color:#a09060;line-height:1.7">Select a tower type.<br>Hover map to see range.<br>Click placed tower to upgrade/sell.</div>
-      <div id="upgrade-panel"></div>
-    </div>
-  </div>
-  <div id="now-playing"></div>
+    <script>
+        const board = document.getElementById('board');
+        const initialPieces = [
+            '♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜',
+            '♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟',
+            null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null,
+            '♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙',
+            '♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖'
+        ];
 
-  <!-- End game modal -->
-  <div id="modal" class="overlay-modal">
-    <div class="modal-box">
-      <div class="modal-title" id="modal-title">Victory!</div>
-      <div class="modal-desc" id="modal-desc"></div>
-      <button class="modal-btn green" onclick="restartGame()">Play Again</button>
-      <button class="modal-btn" onclick="confirmMenu()">Main Menu</button>
-    </div>
-  </div>
+        function createBoard() {
+            for (let i = 0; i < 64; i++) {
+                const square = document.createElement('div');
+                square.classList.add('square');
+                square.classList.add((Math.floor(i / 8) + i) % 2 === 0 ? 'white' : 'black');
+                board.appendChild(square);
+            }
+            setPieces();
+        }
 
-</div>
+        function setPieces() {
+            const squares = document.querySelectorAll('.square');
+            initialPieces.forEach((piece, index) => {
+                if (piece) {
+                    const square = squares[index];
+                    square.innerHTML = `<span class='piece'>${piece}</span>`;
+                }
+            });
+        }
 
-<!-- Tower place confirm popup -->
-<div id="place-confirm" style="display:none;position:fixed;z-index:400;background:#100d20;border:2px solid #f0c060;border-radius:12px;padding:12px 14px;text-align:center;width:200px;box-shadow:0 4px 30px rgba(240,180,60,0.3);pointer-events:all">
-  <div class="pc-name" style="font-family:'Cinzel',serif;font-size:11px;color:#f0c060;margin-bottom:8px"></div>
-  <div style="font-family:'Cinzel',serif;font-size:12px;color:#e8d5a3;margin-bottom:10px">Place here?</div>
-  <div style="display:flex;gap:8px;justify-content:center">
-    <button onclick="confirmPlace();event.stopPropagation()" style="padding:6px 16px;background:linear-gradient(135deg,#2a5a2a,#3a8a3a);border:1px solid #5aaa5a;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:11px;cursor:pointer">Yes</button>
-    <button onclick="hidePlaceConfirm();event.stopPropagation()" style="padding:6px 16px;background:linear-gradient(135deg,#3a2a2a,#5a3a3a);border:1px solid #8a5a5a;border-radius:8px;color:#ccc;font-family:'Cinzel',serif;font-size:11px;cursor:pointer">No</button>
-  </div>
-</div>
-<div id="confirm-screen" class="screen" style="background:radial-gradient(ellipse at 50% 40%,#2a0808 0%,#0a0a0f 70%)">
-  <div style="font-family:'Cinzel',serif;font-size:clamp(32px,8vw,64px);color:#f07070;margin-bottom:16px;text-shadow:0 0 40px rgba(240,80,80,0.5)">⚠ ARE YOU SURE?</div>
-  <div style="font-family:'Crimson Text',serif;font-size:clamp(14px,3vw,20px);color:#a08070;margin-bottom:40px">All progress will be lost.</div>
-  <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center">
-    <button onclick="doGoMenu()" style="padding:14px 36px;background:linear-gradient(135deg,#8b1a1a,#c02020);border:1px solid #e04040;border-radius:12px;color:#fff;font-family:'Cinzel',serif;font-size:clamp(14px,3vw,18px);cursor:pointer;letter-spacing:1px">Yes, Quit</button>
-    <button onclick="closeConfirm()" style="padding:14px 36px;background:linear-gradient(135deg,#1a2a3a,#2a4a6a);border:1px solid #4a8aaa;border-radius:12px;color:#a0d0f0;font-family:'Cinzel',serif;font-size:clamp(14px,3vw,18px);cursor:pointer;letter-spacing:1px">Cancel</button>
-  </div>
-</div>
+        createBoard();
 
-</div>
-<script>
-// ---- Credits ----
-function showCredits(){document.getElementById('credits-modal').classList.add('show');}
-function hideCredits(){document.getElementById('credits-modal').classList.remove('show');}
-
-// ---- Confirm Quit ----
-function confirmMenu(){document.getElementById('modal').classList.remove('show');showScreen('confirm-screen');}
-function closeConfirm(){showScreen('game-screen');}
-function doGoMenu(){
-  document.getElementById('modal').classList.remove('show');
-  musicOn=false;stopMusic();
-  document.getElementById('title-music-btn').textContent='🎵 Play Music — King of Kings';
-  document.getElementById('title-music-btn').classList.remove('on');
-  if(raf){cancelAnimationFrame(raf);raf=null;}
-  showScreen('title-screen');
-}
-
-// ---- Speed ----
-var gameSpeed=1;
-function setSpeed(s){gameSpeed=s;document.querySelectorAll('.speed-btn').forEach(function(b){b.classList.remove('active');});var btn=document.getElementById('spd'+s);if(btn)btn.classList.add('active');}
-
-// ---- Music ----
-var TRACKS={menu:{q:'King of Kings Motorhead WWE',label:'King of Kings — Motörhead'},easy:{q:'Canon in D Pachelbel full orchestral',label:'Canon in D — Pachelbel'},medium:{q:'Tokyo Shock WWE theme Def Rebel',label:'Tokyo Shock — Def Rebel'},hard:{q:'Lifeforce Ptaskinsi RJ Pasin music',label:'Lifeforce — Ptaskinsi & RJ Pasin'}};
-var musicOn=false,ytPlayer=null,ytReady=false,ytPending=null;
-(function(){var s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);})();
-function onYouTubeIframeAPIReady(){ytReady=true;var div=document.createElement('div');div.id='yt-node';div.style.cssText='position:fixed;left:-9999px;bottom:-9999px;width:1px;height:1px';document.body.appendChild(div);ytPlayer=new YT.Player('yt-node',{width:'1',height:'1',playerVars:{autoplay:0,controls:0,rel:0,modestbranding:1},events:{onReady:function(){if(ytPending){_doPlay(ytPending);ytPending=null;}},onStateChange:function(e){if(e.data===YT.PlayerState.ENDED)ytPlayer.playVideo();}}});}
-function _doPlay(key){var t=TRACKS[key];ytPlayer.loadPlaylist({listType:'search',list:t.q,index:0});ytPlayer.setVolume(65);setTimeout(function(){try{ytPlayer.playVideo();}catch(e){}},700);var np=document.getElementById('now-playing');if(np)np.textContent='♪ '+t.label;}
-function playTrack(key){if(!ytReady||!ytPlayer){ytPending=key;return;}_doPlay(key);}
-function stopMusic(){if(ytPlayer&&ytReady){try{ytPlayer.stopVideo();}catch(e){}}var np=document.getElementById('now-playing');if(np)np.textContent='';}
-function toggleTitleMusic(){musicOn=!musicOn;var btn=document.getElementById('title-music-btn');if(musicOn){btn.textContent='🔇 Stop Music';btn.classList.add('on');playTrack('menu');}else{btn.textContent='🎵 Play Music — King of Kings';btn.classList.remove('on');stopMusic();}}
-function toggleGameMusic(){musicOn=!musicOn;var btn=document.getElementById('music-btn');if(musicOn){btn.textContent='🔇 ON';btn.classList.add('on');playTrack(G.mode||'easy');}else{btn.textContent='🎵 OFF';btn.classList.remove('on');stopMusic();}}
-
-// ---- Constants ----
-var CELL=40,COLS=20,ROWS=14,W=COLS*CELL,H=ROWS*CELL,MAX_LEVEL=3;
-
-var MAPS={
-  easy:[
-    {id:'meadow',name:'Grassy Meadow',emoji:'🌿',bg:'#2d5a27',pc:'#8B6914',desc:'Lush fields, winding path',path:[[0,6],[3,6],[3,4],[7,4],[7,9],[12,9],[12,5],[16,5],[16,11],[20,11]]},
-    {id:'beach',name:'Sandy Beach',emoji:'🏖️',bg:'#c2956a',pc:'#7a5a2a',desc:'Coastal terrain, shifting sands',path:[[0,4],[4,4],[4,8],[8,8],[8,3],[13,3],[13,10],[17,10],[17,6],[20,6]]},
-    {id:'plains',name:'Open Plains',emoji:'🌾',bg:'#7a9a3a',pc:'#8B6914',desc:'Flat land, long sight lines',path:[[0,7],[5,7],[5,3],[9,3],[9,11],[14,11],[14,5],[18,5],[18,9],[20,9]]}
-  ],
-  medium:[
-    {id:'desert',name:'Burning Desert',emoji:'🏜️',bg:'#c2a060',pc:'#7a5000',desc:'Scorched earth, brutal heat',path:[[0,5],[3,5],[3,9],[7,9],[7,2],[11,2],[11,10],[15,10],[15,6],[20,6]]},
-    {id:'canyon',name:'Red Canyon',emoji:'🏔️',bg:'#8a3a1a',pc:'#5a1a0a',desc:'Narrow corridors, rocky walls',path:[[0,7],[4,7],[4,3],[8,3],[8,11],[13,11],[13,4],[17,4],[17,8],[20,8]]},
-    {id:'swamp',name:'Dark Swamp',emoji:'🐸',bg:'#2a4a2a',pc:'#0a2a0a',desc:'Murky bogs, hidden dangers',path:[[0,6],[3,6],[3,10],[7,10],[7,2],[11,2],[11,8],[15,8],[15,4],[20,4]]}
-  ],
-  hard:[
-    {id:'tundra',name:'Frozen Tundra',emoji:'❄️',bg:'#b0c8d8',pc:'#6080a0',desc:'Icy wasteland, brutal cold',path:[[0,6],[3,6],[3,11],[6,11],[6,2],[10,2],[10,9],[14,9],[14,4],[18,4],[18,12],[20,12]]},
-    {id:'volcano',name:'Volcano Core',emoji:'🌋',bg:'#4a1a0a',pc:'#2a0800',desc:'Rivers of lava, lethal heat',path:[[0,5],[2,5],[2,11],[6,11],[6,3],[10,3],[10,12],[14,12],[14,6],[18,6],[18,10],[20,10]]},
-    {id:'void',name:'Void Realm',emoji:'🌑',bg:'#08001a',pc:'#200a40',desc:'Dimensional horror, pure chaos',path:[[0,7],[2,7],[2,3],[6,3],[6,12],[10,12],[10,4],[13,4],[13,11],[17,11],[17,5],[20,5]]}
-  ]
-};
-
-var TOWERS=[
-  {id:'archer',name:'Archer',emoji:'🏹',cost:70,dmg:28,range:3.5,rate:1.3,color:'#4a9e4a',desc:'Fast, single target'},
-  {id:'mage',name:'Mage',emoji:'🔮',cost:110,dmg:50,range:3,rate:0.9,color:'#7a4ae0',desc:'Slows enemies',slow:0.5},
-  {id:'catapult',name:'Catapult',emoji:'⚙️',cost:140,dmg:80,range:4,rate:0.45,color:'#c87a2a',desc:'Massive splash',splash:1.5},
-  {id:'cannon',name:'Cannon',emoji:'💣',cost:120,dmg:100,range:3.5,rate:0.55,color:'#606060',desc:'High dmg, splash',splash:1},
-  {id:'frost',name:'Frost Tower',emoji:'❄️',cost:100,dmg:22,range:3,rate:1.1,color:'#60c0e0',desc:'Freezes enemies',splash:0.8,freeze:1.5},
-  {id:'lightning',name:'Storm Tower',emoji:'⚡',cost:170,dmg:65,range:4,rate:1.0,color:'#e0d040',desc:'Chain lightning x3',chain:3},
-  {id:'poison',name:'Toxin Spire',emoji:'☠️',cost:130,dmg:18,range:3.5,rate:1.6,color:'#70c040',desc:'Poison DoT',dot:3},
-  {id:'ballista',name:'Ballista',emoji:'🎯',cost:150,dmg:135,range:5,rate:0.4,color:'#8a5a2a',desc:'Extreme range',pierce:3}
-];
-
-var WEATHERS=[
-  {id:'clear',name:'Clear Skies',icon:'☀️',effect:'No special effects',em:{spd:1,hp:1},tm:{dmg:1,range:1}},
-  {id:'fog',name:'Dense Fog',icon:'🌫️',effect:'Tower range -30%',em:{spd:1,hp:1},tm:{dmg:1,range:0.7}},
-  {id:'rain',name:'Heavy Rain',icon:'🌧️',effect:'Enemies -20% speed',em:{spd:0.8,hp:1},tm:{dmg:1,range:1}},
-  {id:'storm',name:'Thunderstorm',icon:'⛈️',effect:'Storm towers +50% dmg',em:{spd:1.25,hp:1},tm:{dmg:1,range:1},stormBuff:1.5},
-  {id:'blizzard',name:'Blizzard',icon:'🌨️',effect:'Enemies -40% speed',em:{spd:0.6,hp:1},tm:{dmg:1,range:1}},
-  {id:'heatwave',name:'Heat Wave',icon:'🌡️',effect:'Enemies +20% HP, cannon +40% dmg',em:{spd:1,hp:1.2},tm:{dmg:1,range:1},fireBuff:1.4},
-  {id:'wind',name:'Gale Winds',icon:'💨',effect:'Enemies +25% speed',em:{spd:1.25,hp:1},tm:{dmg:1,range:1}},
-  {id:'meteor',name:'Meteor Shower',icon:'☄️',effect:'Random meteors deal AoE!',em:{spd:1,hp:1},tm:{dmg:1,range:1},meteors:true},
-  {id:'eclipse',name:'Solar Eclipse',icon:'🌑',effect:'Enemies +15% spd & HP',em:{spd:1.15,hp:1.15},tm:{dmg:1,range:1}},
-  {id:'blessed',name:'Divine Blessing',icon:'✨',effect:'All towers +35% damage',em:{spd:1,hp:1},tm:{dmg:1.35,range:1}}
-];
-
-var ENEMIES=[
-  {id:'goblin',name:'Goblin',emoji:'👺',hp:55,spd:1.4,gold:12,score:10},
-  {id:'orc',name:'Orc',emoji:'👹',hp:130,spd:0.85,gold:22,score:20},
-  {id:'skeleton',name:'Skeleton',emoji:'💀',hp:70,spd:1.1,gold:14,score:15},
-  {id:'troll',name:'Troll',emoji:'🧌',hp:350,spd:0.55,gold:45,score:50},
-  {id:'demon',name:'Demon',emoji:'😈',hp:260,spd:1.0,gold:38,score:45},
-  {id:'dragon',name:'Dragon',emoji:'🐉',hp:1000,spd:0.65,gold:130,score:200},
-  {id:'ghost',name:'Ghost',emoji:'👻',hp:100,spd:1.7,gold:20,score:25},
-  {id:'golem',name:'Stone Golem',emoji:'🗿',hp:650,spd:0.45,gold:85,score:100},
-  {id:'knight',name:'Dark Knight',emoji:'🛡️',hp:420,spd:0.8,gold:65,score:80},
-  {id:'witch',name:'Witch',emoji:'🧙',hp:175,spd:1.2,gold:33,score:40}
-];
-
-// ---- Upgrade system ----
-// Each level multiplies: dmg *1.4, range *1.1, rate *1.15
-function getTowerStats(t){
-  var td=TOWERS.find(function(x){return x.id===t.type;});
-  var lvl=t.level||1;
-  var dmgScale=Math.pow(1.4,lvl-1);
-  var rngScale=Math.pow(1.1,lvl-1);
-  var rateScale=Math.pow(1.15,lvl-1);
-  return{dmg:td.dmg*dmgScale,range:td.range*rngScale,rate:td.rate*rateScale,
-    color:td.color,emoji:td.emoji,name:td.name,
-    slow:td.slow,freeze:td.freeze,dot:td.dot,splash:td.splash,chain:td.chain,pierce:td.pierce};
-}
-function upgradeCost(td,currentLevel){return Math.floor(td.cost*(0.7+currentLevel*0.55));}
-function lvlRoman(n){return n===1?'I':n===2?'II':n===3?'III':String(n);}
-function lvlColor(n){return n===1?'#b0b0b0':n===2?'#60d8ff':n===3?'#ffd700':'#fff';}
-
-// ---- Advisor ----
-function getBendCells(path){var bends=[];for(var i=1;i<path.length-1;i++){var x0=path[i-1][0],y0=path[i-1][1],x1=path[i][0],y1=path[i][1],x2=path[i+1][0],y2=path[i+1][1];if((x1-x0)!==(x2-x1)||(y1-y0)!==(y2-y1))bends.push([x1,y1]);}return bends;}
-function getBestFirstCell(){var pathCells=cachedPathCells();var bends=getBendCells(G.map.path);var candidates=[];var dirs=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];bends.forEach(function(b){dirs.forEach(function(d){var c=b[0]+d[0],r=b[1]+d[1];if(c>=0&&c<COLS&&r>=0&&r<ROWS&&!isOnPath(c,r))candidates.push([c,r]);});});if(!candidates.length)return null;var best=null,bestScore=-1;candidates.forEach(function(cd){var c=cd[0],r=cd[1];var score=pathCells.filter(function(p){return Math.hypot(p[0]-c,p[1]-r)<=3.5;}).length;if(score>bestScore){bestScore=score;best=cd;}});return best;}
-function showAdvisor(){var best=getBestFirstCell();var toast=document.getElementById('advisor-toast');var text=document.getElementById('advisor-text');if(!best){toast.style.display='none';return;}text.textContent='🏹 Col '+(best[0]+1)+', Row '+(best[1]+1)+' — covers most path bends!';toast.style.display='block';toast.style.opacity='1';G._advisorBestCell=[best[0],best[1]];}
-function hideAdvisor(){var toast=document.getElementById('advisor-toast');toast.style.opacity='0';setTimeout(function(){toast.style.display='none';},650);G._advisorDone=true;}
-
-// ---- Core state ----
-var G={},canvas,ctx,raf,lastT=0,hoveredCell=null,_pathCellCache=null,_pathCacheId='';
-var G_selectedPlaced=null; // the placed tower object currently in upgrade panel
-
-function cachedPathCells(){var id=(G.map&&G.map.id)||'';if(_pathCacheId!==id){_pathCellCache=buildPathCellList();_pathCacheId=id;}return _pathCellCache;}
-function buildPathCellList(){var set={},cells=[],path=G.map.path;for(var i=0;i<path.length-1;i++){var x0=path[i][0],y0=path[i][1],x1=path[i+1][0],y1=path[i+1][1];var dx=Math.sign(x1-x0),dy=Math.sign(y1-y0),cx=x0,cy=y0;while(cx!==x1||cy!==y1){var k=cx+','+cy;if(!set[k]){set[k]=1;cells.push([cx,cy]);}cx+=dx;cy+=dy;}var k2=x1+','+y1;if(!set[k2]){set[k2]=1;cells.push([x1,y1]);}}return cells;}
-function isOnPath(c,r){return cachedPathCells().some(function(p){return p[0]===c&&p[1]===r;});}
-
-function selectMode(mode){G.mode=mode;document.getElementById('map-sub').textContent=mode.toUpperCase()+' MODE';var grid=document.getElementById('map-grid');var bgs={easy:'linear-gradient(135deg,#1a3a1a,#2a5a2a)',medium:'linear-gradient(135deg,#3a2a0a,#5a4010)',hard:'linear-gradient(135deg,#2a0a0a,#4a1010)'};grid.innerHTML='';MAPS[mode].forEach(function(m){var c=document.createElement('div');c.className='map-card';c.style.background=bgs[mode];c.innerHTML='<div class="map-preview" style="background:'+m.bg+'">'+m.emoji+'</div><div class="map-info"><div class="map-name">'+m.name+'</div><div class="map-detail">'+m.desc+'</div></div>';c.onclick=function(){startGame(mode,m);};grid.appendChild(c);});showScreen('map-screen');}
-
-function startGame(mode,mapData){
-  var lives=mode==='easy'?30:mode==='medium'?25:22;
-  var gold=mode==='easy'?220:mode==='medium'?180:160;
-  G={mode:mode,map:mapData,lives:lives,gold:gold,wave:0,score:0,enemies:[],projectiles:[],particles:[],selectedTower:null,placedTowers:[],waveRunning:false,spawnQueue:[],spawnTimer:0,weather:WEATHERS[0],gameOver:false,meteorTimer:0,pathPoints:[],_advisorDone:false,_advisorBestCell:null};
-  _pathCacheId='';G_selectedPlaced=null;
-  buildPathPoints();showScreen('game-screen');initCanvas();buildSidebar();updateHUD();applyWeather(WEATHERS[0]);showAdvisor();
-  var mb=document.getElementById('music-btn');if(musicOn){mb.textContent='🔇 ON';mb.classList.add('on');playTrack(mode);}else{mb.textContent='🎵 OFF';mb.classList.remove('on');}
-  if(raf)cancelAnimationFrame(raf);setSpeed(1);lastT=0;raf=requestAnimationFrame(loop);
-}
-function buildPathPoints(){var path=G.map.path;G.pathPoints=[];for(var i=0;i<path.length-1;i++){var x0=path[i][0],y0=path[i][1],x1=path[i+1][0],y1=path[i+1][1];var steps=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));for(var s=0;s<steps;s++)G.pathPoints.push({x:x0+(x1-x0)*s/steps,y:y0+(y1-y0)*s/steps});}G.pathPoints.push({x:path[path.length-1][0],y:path[path.length-1][1]});}
-
-function initCanvas(){
-  canvas=document.getElementById('game-canvas');
-  var isMobile=window.innerWidth<=600;
-  var sideW=isMobile?0:Math.min(220,window.innerWidth*0.22);
-  var hudH=82,bottomH=isMobile?160:0;
-  var aw=window.innerWidth-sideW,ah=window.innerHeight-hudH-bottomH;
-  var scale=Math.min(aw/W,ah/H,1);
-  canvas.width=Math.floor(W*scale);canvas.height=Math.floor(H*scale);
-  ctx=canvas.getContext('2d');ctx.scale(scale,scale);
-  canvas.addEventListener('click',handleClick,{once:false});
-  canvas.addEventListener('touchend',function(e){
-    e.preventDefault();
-    var touch=e.changedTouches[0],r=canvas.getBoundingClientRect();
-    var sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;
-    hoveredCell={col:Math.floor((touch.clientX-r.left)*sx/CELL),row:Math.floor((touch.clientY-r.top)*sy/CELL)};
-    handleClick(e);hoveredCell=null;
-  },{passive:false});
-  canvas.onmousemove=function(e){var r=canvas.getBoundingClientRect(),sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;hoveredCell={col:Math.floor((e.clientX-r.left)*sx/CELL),row:Math.floor((e.clientY-r.top)*sy/CELL)};};
-  canvas.onmouseleave=function(){hoveredCell=null;};
-}
-
-// ---- Sidebar ----
-function buildSidebar(){
-  var list=document.getElementById('tower-list');list.innerHTML='';
-  TOWERS.forEach(function(t){
-    var btn=document.createElement('div');
-    btn.className='tower-btn'+(G.gold<t.cost?' cant-afford':'');
-    btn.id='tb-'+t.id;
-    btn.innerHTML='<span class="tower-emoji">'+t.emoji+'</span><div class="tower-info"><div class="tower-name">'+t.name+'</div><div class="tower-cost">💰'+t.cost+' · '+t.desc+'</div></div><span class="tower-cost-mobile">💰'+t.cost+'</span>';
-    btn.onclick=function(){
-      if(G.gold<t.cost)return;
-      G.selectedTower=(G.selectedTower===t.id)?null:t.id;
-      G_selectedPlaced=null;
-      document.querySelectorAll('.tower-btn').forEach(function(b){b.classList.remove('selected');});
-      hideUpgPanel();
-      if(G.selectedTower){btn.classList.add('selected');document.getElementById('selected-info').innerHTML='<b style="color:#f0c060">'+t.emoji+' '+t.name+'</b><br>Cost: 💰'+t.cost+'<br>Dmg: '+Math.round(t.dmg)+' · Range: '+t.range+'<br>'+t.desc+'<br><span style="color:#80b080">Hover map to preview range</span>';}
-      else document.getElementById('selected-info').innerHTML='Select a tower type.<br>Hover map to see range.<br>Click placed tower to upgrade/sell.';
-    };
-    list.appendChild(btn);
-  });
-}
-function updateSidebarAffordability(){TOWERS.forEach(function(t){var b=document.getElementById('tb-'+t.id);if(b)b.classList.toggle('cant-afford',G.gold<t.cost);});}
-
-// ---- Upgrade panel ----
-function showUpgPanel(pt){
-  G_selectedPlaced=pt;
-  G.selectedTower=null;
-  document.querySelectorAll('.tower-btn').forEach(function(b){b.classList.remove('selected');});
-  refreshUpgPanel();
-}
-function refreshUpgPanel(){
-  var pt=G_selectedPlaced;if(!pt)return;
-  var td=TOWERS.find(function(x){return x.id===pt.type;});
-  var lvl=pt.level||1;
-  var stats=getTowerStats(pt);
-  var canUpg=lvl<MAX_LEVEL;
-  var upCost=upgradeCost(td,lvl);
-  var canAfford=G.gold>=upCost;
-  var sellVal=Math.floor(td.cost*0.6*lvl);
-  var lvlStr='<span style="color:'+lvlColor(lvl)+'">Lv '+lvlRoman(lvl)+'</span>';
-  var maxStr=canUpg?'':'<span style="color:#ffd700;font-size:8px"> ✦MAX✦</span>';
-  document.getElementById('selected-info').innerHTML='';
-  var panel=document.getElementById('upgrade-panel');
-  panel.innerHTML=
-    '<div class="up-title">'+stats.emoji+' '+stats.name+' '+lvlStr+maxStr+'</div>'+
-    '<div class="up-stat">⚔️ Dmg: <b>'+Math.round(stats.dmg)+'</b></div>'+
-    '<div class="up-stat">📏 Range: <b>'+stats.range.toFixed(1)+'</b></div>'+
-    '<div class="up-stat">⚡ Rate: <b>'+stats.rate.toFixed(2)+'/s</b></div>'+
-    (canUpg
-      ? '<button class="upg-btn"'+(canAfford?'':' disabled')+' id="upgbtn">⬆ Upgrade → Lv '+lvlRoman(lvl+1)+'<br>(💰'+upCost+')</button>'
-      : '<div style="text-align:center;color:#ffd700;font-family:Cinzel,serif;font-size:9px;margin-top:5px;letter-spacing:1px">✦ MAXIMUM POWER ✦</div>')+
-    '<button class="sell-btn" id="sellbtn">🪙 Sell — +💰'+sellVal+'</button>';
-  panel.style.display='block';
-  var ub=document.getElementById('upgbtn');if(ub)ub.onclick=doUpgrade;
-  var sb=document.getElementById('sellbtn');if(sb)sb.onclick=doSell;
-}
-function hideUpgPanel(){
-  document.getElementById('upgrade-panel').style.display='none';
-  G_selectedPlaced=null;
-  document.getElementById('selected-info').innerHTML='Select a tower type.<br>Hover map to see range.<br>Click placed tower to upgrade/sell.';
-}
-function doUpgrade(){
-  if(!G_selectedPlaced)return;
-  var td=TOWERS.find(function(x){return x.id===G_selectedPlaced.type;});
-  var lvl=G_selectedPlaced.level||1;
-  if(lvl>=MAX_LEVEL)return;
-  var cost=upgradeCost(td,lvl);
-  if(G.gold<cost){addFloat((G_selectedPlaced.col+.5)*CELL,(G_selectedPlaced.row+.5)*CELL,'Need gold!','#f06060');return;}
-  G.gold-=cost;G_selectedPlaced.level=lvl+1;
-  document.getElementById('hud-gold').textContent=G.gold;
-  updateSidebarAffordability();
-  addFloat((G_selectedPlaced.col+.5)*CELL,(G_selectedPlaced.row+.5)*CELL,'⬆ Lv '+lvlRoman(G_selectedPlaced.level),'#c0a0ff');
-  refreshUpgPanel();
-}
-function doSell(){
-  if(!G_selectedPlaced)return;
-  var td=TOWERS.find(function(x){return x.id===G_selectedPlaced.type;});
-  var lvl=G_selectedPlaced.level||1;
-  var ref=Math.floor(td.cost*0.6*lvl);
-  G.gold+=ref;
-  var cx=(G_selectedPlaced.col+.5)*CELL,cy=(G_selectedPlaced.row+.5)*CELL;
-  G.placedTowers=G.placedTowers.filter(function(t){return t!==G_selectedPlaced;});
-  document.getElementById('hud-gold').textContent=G.gold;
-  addFloat(cx,cy,'+'+ref+' sold','#f0c060');
-  updateSidebarAffordability();hideUpgPanel();
-}
-
-// ---- Weather ----
-function applyWeather(w){G.weather=w;document.getElementById('w-icon').textContent=w.icon;document.getElementById('w-name').textContent=w.name;document.getElementById('w-effect').textContent='— '+w.effect;var ov=document.getElementById('weather-overlay');ov.innerHTML='';ov.style.background='transparent';if(w.id==='rain'||w.id==='storm')addRain(ov,w.id==='storm');else if(w.id==='blizzard')addSnow(ov);else if(w.id==='fog')ov.style.background='rgba(180,190,210,0.15)';}
-function addRain(el,heavy){if(!document.getElementById('sty-rain')){var s=document.createElement('style');s.id='sty-rain';s.textContent='@keyframes rain{from{transform:translateY(-20px) rotate(12deg)}to{transform:translateY(110vh) rotate(12deg)}}';document.head.appendChild(s);}for(var i=0;i<(heavy?80:50);i++){var d=document.createElement('div');d.style.cssText='position:absolute;left:'+Math.random()*100+'%;top:-20px;width:'+(heavy?2:1)+'px;height:'+(heavy?16:10)+'px;background:rgba(140,180,220,0.5);animation:rain '+(0.3+Math.random()*0.4)+'s '+Math.random()*2+'s infinite linear;border-radius:1px';el.appendChild(d);}}
-function addSnow(el){if(!document.getElementById('sty-snow')){var s=document.createElement('style');s.id='sty-snow';s.textContent='@keyframes snow{0%{transform:translateY(-10px) translateX(0)}50%{transform:translateY(50vh) translateX(20px)}100%{transform:translateY(110vh) translateX(-10px)}}';document.head.appendChild(s);}for(var i=0;i<60;i++){var sz=2+Math.random()*4,d=document.createElement('div');d.style.cssText='position:absolute;left:'+Math.random()*100+'%;top:-10px;width:'+sz+'px;height:'+sz+'px;background:rgba(210,230,255,0.8);border-radius:50%;animation:snow '+(2+Math.random()*3)+'s '+Math.random()*3+'s infinite linear';el.appendChild(d);}}
-
-// ---- Wave logic ----
-function getWaveEnemies(wave,mode){
-  var base=mode==='easy'?9:mode==='medium'?13:17;
-  var count=base+Math.floor(wave*2.0);
-  var pools={easy:['goblin','orc','skeleton'],medium:['goblin','orc','skeleton','troll','demon','ghost','witch'],hard:['orc','troll','demon','ghost','golem','knight','witch','dragon']};
-  var pool=pools[mode],list=[];
-  for(var i=0;i<count;i++)list.push(pool[Math.floor(Math.random()*Math.min(pool.length,1+Math.floor(wave/2)))]);
-  if(wave%5===0&&wave>0){var boss=mode==='easy'?'troll':mode==='medium'?'golem':'dragon';list.push(boss);}
-  return list;
-}
-function startWave(){
-  if(G.waveRunning||G.gameOver)return;
-  G.wave++;document.getElementById('hud-wave').textContent=G.wave;document.getElementById('wave-btn').disabled=true;
-  var w=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];applyWeather(w);
-  G.spawnQueue=getWaveEnemies(G.wave,G.mode);G.spawnTimer=0;G.waveRunning=true;
-  var counts={};G.spawnQueue.forEach(function(e){counts[e]=(counts[e]||0)+1;});
-  document.getElementById('wave-preview').innerHTML='<b style="color:#f0c060">Wave '+G.wave+'</b><br>'+Object.keys(counts).map(function(k){var e=ENEMIES.find(function(x){return x.id===k;});return e.emoji+' '+e.name+' x'+counts[k];}).join('<br>');
-}
-function spawnEnemy(id){
-  var t=ENEMIES.find(function(e){return e.id===id;});
-  var wm=G.weather.em,hm=G.mode==='easy'?0.75:G.mode==='medium'?0.95:1.1,wv=1+G.wave*0.05;
-  var hp=t.hp*wm.hp*hm*wv;
-  return{id:t.id,name:t.name,emoji:t.emoji,hp:hp,maxHp:hp,spd:t.spd*wm.spd,gold:t.gold,score:t.score,pathIdx:0,x:G.pathPoints[0].x,y:G.pathPoints[0].y,frozen:0,slowed:0,poisoned:0,dotDmg:0,reachedEnd:false};
-}
-
-// ---- Game loop ----
-function loop(ts){var dt=Math.min((ts-lastT)/1000,0.05)*gameSpeed;lastT=ts;if(!G.gameOver){update(dt);draw();}raf=requestAnimationFrame(loop);}
-
-function update(dt){
-  // Spawn
-  if(G.waveRunning&&G.spawnQueue.length>0){G.spawnTimer-=dt;if(G.spawnTimer<=0){G.enemies.push(spawnEnemy(G.spawnQueue.shift()));G.spawnTimer=0.9;}}
-  // Meteors
-  if(G.weather.meteors){G.meteorTimer-=dt;if(G.meteorTimer<=0){G.meteorTimer=2+Math.random()*2.5;var tx=(1+Math.random()*(COLS-2))*CELL,ty=(1+Math.random()*(ROWS-2))*CELL;G.particles.push({type:'meteor',x:tx-50,y:-30,tx:tx,ty:ty,life:0.9,maxLife:0.9});(function(tx,ty){setTimeout(function(){G.enemies.forEach(function(e){var ex=(e.x+.5)*CELL,ey=(e.y+.5)*CELL;if(Math.hypot(ex-tx,ey-ty)<2.2*CELL){e.hp-=80;addFloat(ex,ey,'☄️80','#ff8040');}});for(var i=0;i<8;i++)G.particles.push({type:'exp',x:tx,y:ty,vx:(Math.random()-.5)*100,vy:(Math.random()-.5)*100,life:.5,maxLife:.5,r:6+Math.random()*8,color:'#ff6020'});},700);})(tx,ty);}}
-  // Move enemies
-  G.enemies.forEach(function(e){if(e.hp<=0||e.reachedEnd)return;var spd=e.spd;if(e.frozen>0){e.frozen-=dt;spd=0;}else if(e.slowed>0){e.slowed-=dt;spd*=0.5;}if(e.poisoned>0){e.poisoned-=dt;e.hp-=e.dotDmg*dt;}var tgt=G.pathPoints[Math.min(e.pathIdx,G.pathPoints.length-1)];var dx=tgt.x-e.x,dy=tgt.y-e.y,dist=Math.hypot(dx,dy);if(dist<0.12){e.pathIdx++;if(e.pathIdx>=G.pathPoints.length){e.reachedEnd=true;G.lives=Math.max(0,G.lives-1);document.getElementById('hud-lives').textContent=G.lives;if(G.lives<=0)endGame(false);}}else{var mv=spd*dt*1.6;e.x+=dx/dist*mv;e.y+=dy/dist*mv;}});
-  G.enemies=G.enemies.filter(function(e){return e.hp>0&&!e.reachedEnd;});
-  // Tower attacks — use getTowerStats for level-scaled values
-  G.placedTowers.forEach(function(t){
-    t.cd=(t.cd||0)-dt;if(t.cd>0)return;
-    var stats=getTowerStats(t);
-    var wm=G.weather.tm,rng=stats.range*(wm.range||1),dmgM=wm.dmg||1;
-    if(G.weather.stormBuff&&t.type==='lightning')dmgM*=G.weather.stormBuff;
-    if(G.weather.fireBuff&&t.type==='cannon')dmgM*=G.weather.fireBuff;
-    var tgts=G.enemies.filter(function(e){var dx=e.x-(t.col+.5),dy=e.y-(t.row+.5);return Math.hypot(dx,dy)<=rng;}).sort(function(a,b){return b.pathIdx-a.pathIdx;});
-    if(!tgts.length)return;
-    t.cd=1/stats.rate;
-    var dmg=stats.dmg*dmgM,px=(t.col+.5)*CELL,py=(t.row+.5)*CELL;
-    if(stats.chain){var cnt=Math.min(stats.chain,tgts.length);for(var i=0;i<cnt;i++){var te=tgts[i];te.hp-=dmg/(i+1);var ex=(te.x+.5)*CELL,ey=(te.y+.5)*CELL;G.projectiles.push({x:px,y:py,tx:ex,ty:ey,life:.15,maxLife:.15,type:'bolt',color:stats.color,width:3-i});addFloat(ex,ey,Math.floor(dmg/(i+1)),stats.color);checkKill(te);}}
-    else{var pri=tgts[0];G.projectiles.push({x:px,y:py,tx:(pri.x+.5)*CELL,ty:(pri.y+.5)*CELL,life:.22,maxLife:.22,type:t.type,color:stats.color,target:pri,dmg:dmg,splash:stats.splash,slow:stats.slow,freeze:stats.freeze,dot:stats.dot});}
-  });
-  G.projectiles.forEach(function(p){p.life-=dt;if(p.life<=0&&p.target){var ex=(p.target.x+.5)*CELL,ey=(p.target.y+.5)*CELL;if(p.splash){G.enemies.forEach(function(e){if(Math.hypot((e.x+.5)*CELL-ex,(e.y+.5)*CELL-ey)<=p.splash*CELL){e.hp-=p.dmg;addFloat((e.x+.5)*CELL,(e.y+.5)*CELL,Math.floor(p.dmg),p.color);checkKill(e);}});for(var i=0;i<5;i++)G.particles.push({type:'exp',x:ex,y:ey,vx:(Math.random()-.5)*100,vy:(Math.random()-.5)*100,life:.4,maxLife:.4,r:5+Math.random()*8,color:p.color});}else{p.target.hp-=p.dmg;if(p.slow)p.target.slowed=p.slow;if(p.freeze)p.target.frozen=p.freeze;if(p.dot){p.target.poisoned=3;p.target.dotDmg=p.dmg/2;}addFloat(ex,ey,Math.floor(p.dmg),p.color);checkKill(p.target);}}});
-  G.projectiles=G.projectiles.filter(function(p){return p.life>0;});
-  G.particles.forEach(function(p){p.life-=dt;if(p.vx!==undefined){p.x+=p.vx*dt;p.y+=p.vy*dt;}if(p.type==='meteor')p.y+=350*dt;});
-  G.particles=G.particles.filter(function(p){return p.life>0;});
-  if(G.waveRunning&&G.spawnQueue.length===0&&G.enemies.length===0){G.waveRunning=false;document.getElementById('wave-btn').disabled=false;var max=G.mode==='easy'?20:G.mode==='medium'?25:30;if(G.wave>=max)endGame(true);}
-}
-function checkKill(e){if(e.hp<=0&&!e._killed){e._killed=true;G.gold+=e.gold;G.score+=e.score;document.getElementById('hud-gold').textContent=G.gold;document.getElementById('hud-score').textContent=G.score;updateSidebarAffordability();var ex=(e.x+.5)*CELL,ey=(e.y+.5)*CELL;for(var i=0;i<4;i++)G.particles.push({type:'coin',x:ex,y:ey,vx:(Math.random()-.5)*60,vy:-40-Math.random()*40,life:.8,maxLife:.8});}}
-
-// ---- Drawing ----
-function draw(){ctx.clearRect(0,0,W,H);drawMap();drawPath();drawBestMoveHighlight();drawRanges();drawHoverRange();drawEnemies();drawTowers();drawProjectiles();drawParticles();drawHoverCell();}
-
-function drawMap(){
-  ctx.fillStyle=G.map.bg;ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='rgba(0,0,0,0.08)';ctx.lineWidth=0.5;
-  for(var c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL,0);ctx.lineTo(c*CELL,H);ctx.stroke();}
-  for(var r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*CELL);ctx.lineTo(W,r*CELL);ctx.stroke();}
-  cachedPathCells().forEach(function(p){ctx.fillStyle=G.map.pc;ctx.fillRect(p[0]*CELL+.5,p[1]*CELL+.5,CELL-1,CELL-1);ctx.fillStyle='rgba(0,0,0,0.1)';ctx.fillRect(p[0]*CELL+4,p[1]*CELL+4,4,4);ctx.fillRect(p[0]*CELL+CELL-8,p[1]*CELL+CELL-8,4,4);});
-}
-function drawBestMoveHighlight(){if(G._advisorDone||!G._advisorBestCell)return;var c=G._advisorBestCell[0],r=G._advisorBestCell[1];var pulse=0.35+0.25*Math.abs(Math.sin(Date.now()/400));ctx.fillStyle='rgba(240,220,60,'+pulse+')';ctx.fillRect(c*CELL,r*CELL,CELL,CELL);ctx.strokeStyle='rgba(240,220,60,0.9)';ctx.lineWidth=2;ctx.strokeRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);ctx.font='16px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🏹',(c+.5)*CELL,(r+.5)*CELL);}
-function drawPath(){var sp=G.map.path[0],ep=G.map.path[G.map.path.length-1];ctx.fillStyle='rgba(0,220,0,0.25)';ctx.fillRect(sp[0]*CELL,sp[1]*CELL,CELL,CELL);ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🚩',(sp[0]+.5)*CELL,(sp[1]+.5)*CELL);ctx.fillStyle='rgba(220,0,0,0.25)';ctx.fillRect(ep[0]*CELL,ep[1]*CELL,CELL,CELL);ctx.fillText('🏰',(ep[0]+.5)*CELL,(ep[1]+.5)*CELL);}
-
-// Placed tower ranges
-function drawRanges(){
-  G.placedTowers.forEach(function(t){
-    var stats=getTowerStats(t);
-    var rng=stats.range*(G.weather.tm.range||1);
-    var isSel=(G_selectedPlaced===t);
-    ctx.strokeStyle=isSel?stats.color+'cc':stats.color+'40';
-    ctx.lineWidth=isSel?2:1;
-    ctx.setLineDash(isSel?[6,3]:[4,4]);
-    ctx.beginPath();ctx.arc((t.col+.5)*CELL,(t.row+.5)*CELL,rng*CELL,0,Math.PI*2);ctx.stroke();
-    ctx.setLineDash([]);
-    // Level badge on corner
-    var lvl=t.level||1;
-    if(lvl>1){
-      ctx.fillStyle=lvlColor(lvl);ctx.font='bold 10px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
-      ctx.fillText(lvlRoman(lvl),(t.col)*CELL+2,(t.row)*CELL+2);
-    }
-  });
-}
-
-// Range preview while hovering with tower type selected (BEFORE placing)
-function drawHoverRange(){
-  // If confirm popup open, draw range at the pending cell
-  var col,row,td;
-  if(_pendingPlace){
-    col=_pendingPlace.col;row=_pendingPlace.row;td=_pendingPlace.td;
-  } else {
-    if(!hoveredCell||!G.selectedTower)return;
-    col=hoveredCell.col;row=hoveredCell.row;
-    if(col<0||col>=COLS||row<0||row>=ROWS)return;
-    if(isOnPath(col,row))return;
-    if(G.placedTowers.some(function(t){return t.col===col&&t.row===row;}))return;
-    td=TOWERS.find(function(t){return t.id===G.selectedTower;});
-  }
-  var rng=td.range*(G.weather.tm.range||1);
-  // Semi-transparent filled area
-  ctx.fillStyle=td.color+'1e';
-  ctx.beginPath();ctx.arc((col+.5)*CELL,(row+.5)*CELL,rng*CELL,0,Math.PI*2);ctx.fill();
-  // Solid dashed border
-  ctx.strokeStyle=td.color+'dd';ctx.lineWidth=2;ctx.setLineDash([6,3]);
-  ctx.beginPath();ctx.arc((col+.5)*CELL,(row+.5)*CELL,rng*CELL,0,Math.PI*2);ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-function drawTowers(){
-  G.placedTowers.forEach(function(t){
-    var stats=getTowerStats(t);
-    var cx=(t.col+.5)*CELL,cy=(t.row+.5)*CELL;
-    var isSel=(G_selectedPlaced===t);
-    if(isSel){ctx.shadowColor=stats.color;ctx.shadowBlur=16;}
-    ctx.fillStyle=stats.color+(isSel?'88':'55');
-    ctx.beginPath();ctx.arc(cx,cy,CELL*.43,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle=stats.color;ctx.lineWidth=isSel?3:2;
-    ctx.beginPath();ctx.arc(cx,cy,CELL*.43,0,Math.PI*2);ctx.stroke();
-    ctx.shadowBlur=0;
-    ctx.font='20px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(stats.emoji,cx,cy);
-  });
-}
-
-function drawEnemies(){G.enemies.forEach(function(e){if(e.reachedEnd)return;var ex=(e.x+.5)*CELL,ey=(e.y+.5)*CELL;var bw=CELL*.9,bh=4,bx=ex-bw/2,by=ey-CELL*.55;ctx.fillStyle='#500';ctx.fillRect(bx,by,bw,bh);var pct=Math.max(0,e.hp/e.maxHp);ctx.fillStyle=pct>.5?'#3d3':'#d33';ctx.fillRect(bx,by,bw*pct,bh);if(e.frozen>0){ctx.fillStyle='rgba(100,200,255,.35)';ctx.beginPath();ctx.arc(ex,ey,CELL*.44,0,Math.PI*2);ctx.fill();}if(e.poisoned>0){ctx.fillStyle='rgba(100,200,50,.3)';ctx.beginPath();ctx.arc(ex,ey,CELL*.44,0,Math.PI*2);ctx.fill();}ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(e.emoji,ex,ey);});}
-function drawProjectiles(){var icons={archer:'🏹',mage:'🔮',catapult:'🪨',cannon:'💣',frost:'❄️',lightning:'⚡',poison:'💚',ballista:'🎯'};G.projectiles.forEach(function(p){var t=1-p.life/p.maxLife,x=p.x+(p.tx-p.x)*t,y=p.y+(p.ty-p.y)*t;if(p.type==='bolt'){ctx.strokeStyle=p.color;ctx.lineWidth=p.width||2;ctx.setLineDash([5,3]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.tx,p.ty);ctx.stroke();ctx.setLineDash([]);}else{ctx.font='14px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(icons[p.type]||'•',x,y);}});}
-function drawParticles(){G.particles.forEach(function(p){var a=p.life/p.maxLife;ctx.globalAlpha=a;if(p.type==='exp'){ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1.2-a),0,Math.PI*2);ctx.fill();}else if(p.type==='coin'){ctx.font='13px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('💰',p.x,p.y);}else if(p.type==='meteor'){ctx.font='18px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('☄️',p.x,p.y);}ctx.globalAlpha=1;});}
-
-// Hover cell highlight
-function drawHoverCell(){
-  if(!hoveredCell)return;
-  var col=hoveredCell.col,row=hoveredCell.row;
-  if(col<0||col>=COLS||row<0||row>=ROWS)return;
-  var onPath=isOnPath(col,row);
-  var occupied=G.placedTowers.some(function(t){return t.col===col&&t.row===row;});
-  ctx.fillStyle=onPath?'rgba(255,50,50,.2)':occupied?'rgba(180,150,255,.15)':'rgba(255,255,120,.12)';
-  ctx.fillRect(col*CELL,row*CELL,CELL,CELL);
-  ctx.strokeStyle=onPath?'rgba(255,50,50,.6)':occupied?'rgba(180,150,255,.5)':'rgba(255,255,120,.45)';
-  ctx.lineWidth=2;ctx.strokeRect(col*CELL+1,row*CELL+1,CELL-2,CELL-2);
-  // Ghost tower preview
-  if(G.selectedTower&&!onPath&&!occupied){
-    var td=TOWERS.find(function(t){return t.id===G.selectedTower;});
-    ctx.globalAlpha=.5;ctx.font='20px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(td.emoji,(col+.5)*CELL,(row+.5)*CELL);ctx.globalAlpha=1;
-  }
-}
-
-// ---- Place confirm popup ----
-var _pendingPlace=null;
-function showPlaceConfirm(col,row,td){
-  _pendingPlace={col:col,row:row,td:td};
-  var pop=document.getElementById('place-confirm');
-  var cr=canvas.getBoundingClientRect();
-  var sx=canvas.clientWidth/W,sy=canvas.clientHeight/H;
-  var px=cr.left+(col+.5)*CELL*sx;
-  var py=cr.top+(row+.5)*CELL*sy;
-  // Keep popup inside viewport
-  var pw=200,ph=90;
-  var left=Math.min(px-pw/2,window.innerWidth-pw-8);
-  left=Math.max(8,left);
-  var top=py+22;
-  if(top+ph>window.innerHeight-8)top=py-ph-22;
-  pop.style.left=left+'px';
-  pop.style.top=top+'px';
-  pop.querySelector('.pc-name').textContent=td.emoji+' '+td.name+' — 💰'+td.cost;
-  pop.style.display='block';
-}
-function confirmPlace(){
-  var p=_pendingPlace;
-  if(!p)return;
-  hidePlaceConfirm();
-  if(G.gold<p.td.cost){addFloat((p.col+.5)*CELL,(p.row+.5)*CELL,'Need gold!','#f06060');return;}
-  G.gold-=p.td.cost;
-  G.placedTowers.push({col:p.col,row:p.row,type:p.td.id,cd:0,level:1});
-  document.getElementById('hud-gold').textContent=G.gold;
-  updateSidebarAffordability();
-  if(!G._advisorDone)hideAdvisor();
-}
-function hidePlaceConfirm(){
-  _pendingPlace=null;
-  document.getElementById('place-confirm').style.display='none';
-}
-
-// ---- Click handler ----
-function handleClick(e){
-  // If confirm popup is open, only dismiss if clicking the canvas (not the popup)
-  if(_pendingPlace){
-    var pop=document.getElementById('place-confirm');
-    if(e&&e.target&&pop.contains(e.target))return;
-    hidePlaceConfirm();return;
-  }
-  if(!hoveredCell)return;
-  var col=hoveredCell.col,row=hoveredCell.row;
-  if(col<0||col>=COLS||row<0||row>=ROWS)return;
-  var existing=G.placedTowers.find(function(t){return t.col===col&&t.row===row;});
-  if(existing){showUpgPanel(existing);return;}
-  if(!G.selectedTower){hideUpgPanel();return;}
-  if(isOnPath(col,row)){addFloat((col+.5)*CELL,(row+.5)*CELL,'On path!','#f06060');return;}
-  var td=TOWERS.find(function(t){return t.id===G.selectedTower;});
-  if(G.gold<td.cost){addFloat((col+.5)*CELL,(row+.5)*CELL,'Need gold!','#f06060');return;}
-  showPlaceConfirm(col,row,td);
-}
-
-function addFloat(x,y,text,color){var el=document.createElement('div');el.className='dmg-float';var ov=document.getElementById('weather-overlay');var cr=canvas.getBoundingClientRect(),or=ov.getBoundingClientRect();var sx=canvas.clientWidth/W,sy=canvas.clientHeight/H;el.style.cssText='left:'+((cr.left-or.left)+x*sx-24)+'px;top:'+((cr.top-or.top)+y*sy-10)+'px;color:'+color+';width:64px;text-align:center;font-size:11px';el.textContent=text;ov.appendChild(el);setTimeout(function(){el.remove();},1000);}
-function updateHUD(){document.getElementById('hud-lives').textContent=G.lives;document.getElementById('hud-gold').textContent=G.gold;document.getElementById('hud-wave').textContent=G.wave;document.getElementById('hud-score').textContent=G.score;}
-function endGame(win){G.gameOver=true;G.waveRunning=false;document.getElementById('modal-title').textContent=win?'⚔ Victory! ⚔':'💀 Defeated! 💀';document.getElementById('modal-desc').textContent=win?'You defended the keep through all waves!\nFinal Score: '+G.score+'  |  Gold: '+G.gold:'The enemies broke through!\nWave: '+G.wave+'  |  Score: '+G.score;document.getElementById('modal').classList.add('show');}
-function restartGame(){document.getElementById('modal').classList.remove('show');startGame(G.mode,G.map);}
-function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
-
-showScreen('title-screen');
-</script>
+        // Full game logic, rules, movement validation, etc., will be implemented here.
+        // This will include movement, turn management, check/checkmate detection, etc.
+    </script>
 </body>
 </html>
-
